@@ -283,7 +283,7 @@ $destinationUri="https://$($dataLakeAccountName).blob.core.windows.net/mfgdemoda
 
 $destinationSasKey = New-AzStorageContainerSASToken -Container "anomalydetection" -Context $dataLakeContext -Permission rwdl
 $destinationUri="https://$($dataLakeAccountName).blob.core.windows.net/anomalydetection$($destinationSasKey)"
-& $azCopyCommand copy "https://stcognitivesearch001.blob.core.windows.net/anomalydetection" $destinationUri --recursive
+& $azCopyCommand copy "https://dreamdemostrggen2r16gxwb.blob.core.windows.net/anomalydetection" $destinationUri --recursive
 
 $destinationSasKey = New-AzStorageContainerSASToken -Container "ppecompliancedetection" -Context $dataLakeContext -Permission rwdl
 $destinationUri="https://$($dataLakeAccountName).blob.core.windows.net/ppecompliancedetection$($destinationSasKey)"
