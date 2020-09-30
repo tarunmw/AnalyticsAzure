@@ -1000,100 +1000,6 @@ foreach($name in $reports)
        $reportList.Add($temp)
 }
 Start-Sleep -s 60
-RefreshTokens
-
-#Establish powerbi reports dataset connections
-Add-Content log.txt "------pbi connections update------"
-
-Write-Host "Uploading power BI reports"	
-$powerBIDataSetConnectionTemplate = Get-Content -Path "./artifacts/templates/powerbi_dataset_connection.json"
-
-#$powerBIDataSetConnectionUpdateRequest = $powerBIDataSetConnectionTemplate.Replace("#TARGET_SERVER#", "HelloWorld.sql.azuresynapse.net").Replace("#TARGET_DATABASE#", $sqlPoolName) |Out-String
-$powerBIDataSetConnectionUpdateRequest = $powerBIDataSetConnectionTemplate.Replace("#TARGET_SERVER#", "$($synapseWorkspaceName).sql.azuresynapse.net").Replace("#TARGET_DATABASE#", $sqlPoolName) |Out-String
-
-$sourceServers = @("manufacturingdemor16gxwbbra4mtbmu.sql.azuresynapse.net", "manufacturingdemo.sql.azuresynapse.net", "dreamdemosynapse.sql.azuresynapse.net","manufacturingdemocjgnpnq4eqzbflgi.sql.azuresynapse.net", "manufacturingdemodemocwbennanrpo5s.sql.azuresynapse.net", "HelloWorld.sql.azuresynapse.net","manufacturingdemosep5n2tdtctkwpyjc.sql.azuresynapse.net")
-
-foreach($report in $reportList)
-{
-
-    #skip some...cosmos or nothing to update.
-    #campaign sales operations = COSMOS
-    #Azure Cognitive Search = AZURE TABLE
-    #anomaly detection with images = AZURE TABLE
-    if ($report.Name -eq "sample_test" -or $report.Name -eq "Azure Cognitive Search" -or $report.Name -eq "Campaign Sales Operations" -or $report.Name -eq "anomaly detection with images" -or $report.Name -eq "6_Production Quality- HTAP Synapse Link")
-    {
-        if($report.Name -eq "anomaly detection with images")
-		{
-			$body = "{
-			`"updateDetails`": [
-								{
-									`"name`": `"StorageAccount`",
-									`"newValue`": `"$dataLakeAccountName`"
-								}
-							]
-					}"
-			$url = "https://api.powerbi.com/v1.0/myorg/groups/$($wsId)/datasets/$($report.PowerBIDataSetId)/Default.UpdateParameters"
-           $pbiResult = Invoke-RestMethod -Uri $url -Method POST -Body $body -ContentType "application/json" -Headers @{ Authorization="Bearer $powerbitoken"};
-		}
-		if($report.Name -eq "Azure Cognitive Search")
-		{
-			$body = "{
-			`"updateDetails`": [
-								{
-									`"name`": `"KnowledgeStoreStorageAccount`",
-									`"newValue`": `"$dataLakeAccountName`"
-								},
-								{
-									`"name`": `"SkillsetName`",
-									`"newValue`": `"osha-formrecogoutput-skillset`"
-								}
-							]
-					}"
-			$url = "https://api.powerbi.com/v1.0/myorg/groups/$($wsId)/datasets/$($report.PowerBIDataSetId)/Default.UpdateParameters"
-           $pbiResult = Invoke-RestMethod -Uri $url -Method POST -Body $body -ContentType "application/json" -Headers @{ Authorization="Bearer $powerbitoken"};
-		}
-		 if($report.Name -eq "6_Production Quality- HTAP Synapse Link")
-		{
-			$body = "
-					{
-						`"updateDetails`":
-						[
-							{
-								`"name`": `"CosmosAccountName`",
-								`"newValue`": `"https://$($cosmos_account_name_mfgdemo).documents.azure.com:443/`"
-							},
-							{
-								`"name`": `"SynapseWarehouseDatabaseName`",
-								`"newValue`": `"$($sqlPoolName)`"
-							},
-							{
-								`"name`": `"SynapseWarehouseServerName`",
-								`"newValue`": `"$($synapseWorkspaceName).sql.azuresynapse.net`"
-							}
-						]
-					}
-					";
-			$url = "https://api.powerbi.com/v1.0/myorg/groups/$($wsId)/datasets/$($report.PowerBIDataSetId)/Default.UpdateParameters"
-           $pbiResult = Invoke-RestMethod -Uri $url -Method POST -Body $body -ContentType "application/json" -Headers @{ Authorization="Bearer $powerbitoken"};
-		}
-    }
-
-    foreach($source in $sourceServers)
-    {
-        Write-Host "Setting database connection for $($report.Name)"
-        #ManufacturingDW
-        $powerBIReportDataSetConnectionUpdateRequest = $powerBIDataSetConnectionUpdateRequest.Replace("#SOURCE_SERVER#", $source).Replace("#SOURCE_DATABASE#", $report.SourceDatabase) |Out-String
-        $url = "https://api.powerbi.com/v1.0/myorg/groups/$wsId/datasets/$($report.PowerBIDataSetId)/Default.UpdateDatasources";
-        try
-        {
-            $pbiResult = Invoke-RestMethod -Uri $url -Method POST -Body $powerBIReportDataSetConnectionUpdateRequest -ContentType "application/json" -Headers @{ Authorization="Bearer $powerbitoken" } -ea SilentlyContinue;
-            Add-Content log.txt $pbiResult  
-        }
-        catch
-        {
-        }
-    }
-}
 
 $url = "https://api.powerbi.com/v1.0/myorg/groups/$wsId/reports"
 $pbiResult = Invoke-RestMethod -Uri $url -Method GET -ContentType "application/json" -Headers @{ Authorization="Bearer $powerbitoken" } -ea SilentlyContinue;
@@ -1240,8 +1146,6 @@ foreach($zip in $zips)
 	}
 }
 
-#$app = Get-AzWebApp -ResourceGroupName $rgName -Name $manufacturing_poc_app_service_name
-#Publish-AzWebApp -WebApp $app -ArchivePath "./MfgAI/Manufacturing/automation/mfg-webapp.zip" -Force
 
 Add-Content log.txt "------uploading sql data------"
 Write-Host  "-----------------Uploading sql data ---------------"
@@ -1370,6 +1274,101 @@ foreach ($dataTableLoad in $dataTableList) {
         }
     Invoke-SqlCmd -Query $sqlQuery -ServerInstance $sqlEndpoint -Database $sqlPoolName -Username $sqlUser -Password $sqlPassword
     Write-output "Data for $($dataTableLoad.TABLE_NAME) loaded."
+}
+
+
+RefreshTokens
+
+#Establish powerbi reports dataset connections
+Add-Content log.txt "------pbi connections update------"
+Write-Host "--------- pbi connections update---------"	
+$powerBIDataSetConnectionTemplate = Get-Content -Path "./artifacts/templates/powerbi_dataset_connection.json"
+
+#$powerBIDataSetConnectionUpdateRequest = $powerBIDataSetConnectionTemplate.Replace("#TARGET_SERVER#", "HelloWorld.sql.azuresynapse.net").Replace("#TARGET_DATABASE#", $sqlPoolName) |Out-String
+$powerBIDataSetConnectionUpdateRequest = $powerBIDataSetConnectionTemplate.Replace("#TARGET_SERVER#", "$($synapseWorkspaceName).sql.azuresynapse.net").Replace("#TARGET_DATABASE#", $sqlPoolName) |Out-String
+
+$sourceServers = @("manufacturingdemor16gxwbbra4mtbmu.sql.azuresynapse.net", "manufacturingdemo.sql.azuresynapse.net", "dreamdemosynapse.sql.azuresynapse.net","manufacturingdemocjgnpnq4eqzbflgi.sql.azuresynapse.net", "manufacturingdemodemocwbennanrpo5s.sql.azuresynapse.net", "HelloWorld.sql.azuresynapse.net","manufacturingdemosep5n2tdtctkwpyjc.sql.azuresynapse.net")
+
+foreach($report in $reportList)
+{
+
+    #skip some...cosmos or nothing to update.
+    #campaign sales operations = COSMOS
+    #Azure Cognitive Search = AZURE TABLE
+    #anomaly detection with images = AZURE TABLE
+    if ($report.Name -eq "sample_test" -or $report.Name -eq "Azure Cognitive Search" -or $report.Name -eq "Campaign Sales Operations" -or $report.Name -eq "anomaly detection with images" -or $report.Name -eq "6_Production Quality- HTAP Synapse Link")
+    {
+        if($report.Name -eq "anomaly detection with images")
+		{
+			$body = "{
+			`"updateDetails`": [
+								{
+									`"name`": `"StorageAccount`",
+									`"newValue`": `"$dataLakeAccountName`"
+								}
+							]
+					}"
+			$url = "https://api.powerbi.com/v1.0/myorg/groups/$($wsId)/datasets/$($report.PowerBIDataSetId)/Default.UpdateParameters"
+           $pbiResult = Invoke-RestMethod -Uri $url -Method POST -Body $body -ContentType "application/json" -Headers @{ Authorization="Bearer $powerbitoken"};
+		}
+		if($report.Name -eq "Azure Cognitive Search")
+		{
+			$body = "{
+			`"updateDetails`": [
+								{
+									`"name`": `"KnowledgeStoreStorageAccount`",
+									`"newValue`": `"$dataLakeAccountName`"
+								},
+								{
+									`"name`": `"SkillsetName`",
+									`"newValue`": `"osha-formrecogoutput-skillset`"
+								}
+							]
+					}"
+			$url = "https://api.powerbi.com/v1.0/myorg/groups/$($wsId)/datasets/$($report.PowerBIDataSetId)/Default.UpdateParameters"
+           $pbiResult = Invoke-RestMethod -Uri $url -Method POST -Body $body -ContentType "application/json" -Headers @{ Authorization="Bearer $powerbitoken"};
+		}
+		 if($report.Name -eq "6_Production Quality- HTAP Synapse Link")
+		{
+			$body = "
+					{
+						`"updateDetails`":
+						[
+							{
+								`"name`": `"CosmosAccountName`",
+								`"newValue`": `"https://$($cosmos_account_name_mfgdemo).documents.azure.com:443/`"
+							},
+							{
+								`"name`": `"SynapseWarehouseDatabaseName`",
+								`"newValue`": `"$($sqlPoolName)`"
+							},
+							{
+								`"name`": `"SynapseWarehouseServerName`",
+								`"newValue`": `"$($synapseWorkspaceName).sql.azuresynapse.net`"
+							}
+						]
+					}
+					";
+			$url = "https://api.powerbi.com/v1.0/myorg/groups/$($wsId)/datasets/$($report.PowerBIDataSetId)/Default.UpdateParameters"
+           $pbiResult = Invoke-RestMethod -Uri $url -Method POST -Body $body -ContentType "application/json" -Headers @{ Authorization="Bearer $powerbitoken"};
+		}
+    }
+
+    foreach($source in $sourceServers)
+    {
+        Write-Host "Setting database connection for $($report.Name)"
+        #ManufacturingDW
+        $powerBIReportDataSetConnectionUpdateRequest = $powerBIDataSetConnectionUpdateRequest.Replace("#SOURCE_SERVER#", $source).Replace("#SOURCE_DATABASE#", $report.SourceDatabase) |Out-String
+        $url = "https://api.powerbi.com/v1.0/myorg/groups/$wsId/datasets/$($report.PowerBIDataSetId)/Default.UpdateDatasources";
+        try
+        {
+            $pbiResult = Invoke-RestMethod -Uri $url -Method POST -Body $powerBIReportDataSetConnectionUpdateRequest -ContentType "application/json" -Headers @{ Authorization="Bearer $powerbitoken" } -ea SilentlyContinue;
+            Add-Content log.txt $pbiResult  
+        }
+        catch
+        {
+        }
+    }
 }
 
 
