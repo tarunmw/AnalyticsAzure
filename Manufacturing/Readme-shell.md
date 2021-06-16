@@ -824,7 +824,7 @@ In this section of the document we will create the 'Realtime Field and Sentiment
 
  	![Selecting workspace 26](media/select-workspace26.png)
 
-Your Accelerator environment is now set up.
+Your environment is now set up.
 
 
 ### Task 8: Clean up resources
