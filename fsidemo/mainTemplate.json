@@ -58,15 +58,15 @@
     "default_data_lake_storage_file_system_name": "tempdata",
     "default_data_lake_storage_account_url": "[concat('https://', variables('storage_account_name'), '.dfs.core.windows.net')]",
     "sql_compute_name": "FsiDW",
-    "sql_administrator_login_id": "labsqladmin",
+    "sql_administrator_login_id": "mwsqladmin",
     "spark_compute_name": "Fsi",
     "sql_server_sku": "DW100c",
     "spark_auto_scale_enabled": "true",
     "spark_min_node_count": "3",
-    "spark_max_node_count": "20",
+    "spark_max_node_count": "5",
     "spark_node_count": "1",
     "spark_node_size_family": "MemoryOptimized",
-    "spark_node_size": "Large",
+    "spark_node_size": "Small",
     "spark_auto_pause_enabled": "true",
     "spark_auto_pause_delay_in_minutes": "5",
     "spark_version": "2.4",
@@ -120,8 +120,8 @@
       "apiVersion": "2019-03-22",
       "location": "[variables('location')]",
       "sku": {
-        "name": "S1",
-        "tier": "Standard",
+        "name": "B1",
+        "tier": "Basic",
         "capacity": 1
       },
       "properties": {
@@ -281,21 +281,7 @@
         "endIpAddress": "0.0.0.0"
       }
     },
-    {
-      "type": "Microsoft.CognitiveServices/accounts",
-      "apiVersion": "2021-04-30",
-      "name": "[variables('cog_marketdatacgsvc_name')]",
-      "location": "[variables('location')]",
-      "sku": {
-        "name": "S0"
-      },
-      "kind": "CognitiveServices",
-      "properties": {
-        "apiProperties": {},
-        "customSubDomainName": "[variables('cog_marketdatacgsvc_name')]",
-        "publicNetworkAccess": "Enabled"
-      }
-    },
+   
     {
       "name": "[variables('databricks_workspace_name')]",
       "type": "Microsoft.Databricks/workspaces",
@@ -399,7 +385,7 @@
         },
         "locations": [
           {
-            "locationName": "[variables('location')]"
+            "locationName": "West Central US"
           }
         ],
         "databaseAccountOfferType": "Standard",
@@ -425,7 +411,7 @@
       "name": "[concat(variables('cosmos_account_name_fsi'), '/', variables('cosmos_database_name_fsi'), '/', variables('cosmos_database_container_name_ofac'))]",
       "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers",
       "apiVersion": "2020-04-01",
-      "location": "[variables('location')]",
+      "location": "West Central US",
       "dependsOn": [
         "[resourceId('Microsoft.DocumentDB/databaseAccounts/sqlDatabases',variables('cosmos_account_name_fsi'),variables('cosmos_database_name_fsi'))]"
       ],
@@ -1692,7 +1678,7 @@
       "apiVersion": "2019-08-01",
       "location": "[variables('location')]",
       "sku": {
-        "name": "S1"
+        "name": "B1"
       },
       "kind": "linux",
       "properties": {
