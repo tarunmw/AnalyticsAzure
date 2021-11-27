@@ -1808,7 +1808,7 @@
       "apiVersion": "2019-08-01",
       "location": "[variables('location')]",
       "sku": {
-        "name": "S3"
+        "name": "B1"
       },
       "kind": "linux",
       "properties": {
